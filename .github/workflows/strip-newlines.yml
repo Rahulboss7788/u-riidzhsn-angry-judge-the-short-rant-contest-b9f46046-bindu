@@ -1,0 +1,28 @@
+name: Strip trailing newlines
+
+on:
+  workflow_dispatch:
+
+jobs:
+  strip:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Strip trailing newlines
+        run: |
+          python3 <<'PY'
+          import pathlib
+          for p in ["package.json", ".makefun/owner.json"]:
+              data = pathlib.Path(p).read_bytes()
+              if data.endswith(b"\n"):
+                  pathlib.Path(p).write_bytes(data[:-1])
+          PY
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json .makefun/owner.json
+          git diff --cached --quiet || git commit -m "Strip trailing newlines from package.json and .makefun/owner.json"
+          git push
